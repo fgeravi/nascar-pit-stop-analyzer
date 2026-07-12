@@ -1,0 +1,2 @@
+[console_scripts]
+pitstop-analyzer = pitstop_analyzer.cli:main

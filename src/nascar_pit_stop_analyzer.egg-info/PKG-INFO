@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: nascar-pit-stop-analyzer
+Version: 1.0.0
+Summary: CLI analytics project for NASCAR pit-stop timing and position-change data
+Requires-Python: >=3.11
+Requires-Dist: pandas<3.0,>=2.2
+Requires-Dist: matplotlib<4.0,>=3.9
+Provides-Extra: dev
+Requires-Dist: pytest<9.0,>=8.0; extra == "dev"
