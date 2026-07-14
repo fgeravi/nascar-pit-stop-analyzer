@@ -5,7 +5,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from .analysis import completed_stops, driver_summary
+from .analysis import completed_stops, driver_consistency, driver_summary
 
 
 def create_charts(frame: pd.DataFrame, output_dir: str | Path) -> list[Path]:
@@ -28,6 +28,26 @@ def create_charts(frame: pd.DataFrame, output_dir: str | Path) -> list[Path]:
         plt.title("Fastest Average Pit Stops — Drivers with 2+ Completed Stops")
         plt.tight_layout()
         path = destination / "driver_average_pit_stops.png"
+        plt.savefig(path, dpi=180, bbox_inches="tight")
+        plt.close()
+        files.append(path)
+
+    consistency_data = (
+        driver_consistency(frame, minimum_stops=2)
+        .head(12)
+        .sort_values("consistency_cv_percent", ascending=False)
+    )
+    if not consistency_data.empty:
+        plt.figure(figsize=(11, 7))
+        plt.barh(
+            consistency_data["driver_name"],
+            consistency_data["consistency_cv_percent"],
+        )
+        plt.xlabel("Coefficient of variation (%)")
+        plt.ylabel("Driver")
+        plt.title("Pit-Stop Consistency — Drivers with 2+ Completed Stops")
+        plt.tight_layout()
+        path = destination / "driver_pit_stop_consistency.png"
         plt.savefig(path, dpi=180, bbox_inches="tight")
         plt.close()
         files.append(path)

@@ -187,3 +187,58 @@ def detect_outliers(frame: pd.DataFrame, multiplier: float = 1.5) -> pd.DataFram
         .sort_values("pit_stop_duration", ascending=False)
         .reset_index(drop=True)
     )
+
+
+
+def driver_consistency(
+    frame: pd.DataFrame,
+    minimum_stops: int = 2,
+) -> pd.DataFrame:
+    """Measure how consistently each driver completes pit stops."""
+    valid = completed_stops(frame)
+
+    grouped = (
+        valid.groupby(
+            ["vehicle_number", "driver_name", "vehicle_manufacturer"],
+            as_index=False,
+        )
+        .agg(
+            stops=("pit_stop_duration", "size"),
+            average_pit_stop=("pit_stop_duration", "mean"),
+            pit_stop_std=(
+                "pit_stop_duration",
+                lambda values: values.std(ddof=0),
+            ),
+            fastest_pit_stop=("pit_stop_duration", "min"),
+            slowest_pit_stop=("pit_stop_duration", "max"),
+            net_positions=("positions_gained_lost", "sum"),
+        )
+    )
+
+    grouped = grouped.loc[grouped["stops"] >= minimum_stops].copy()
+
+    if grouped.empty:
+        return grouped
+
+    grouped["duration_range"] = (
+        grouped["slowest_pit_stop"] - grouped["fastest_pit_stop"]
+    )
+
+    grouped["consistency_cv_percent"] = (
+        grouped["pit_stop_std"] / grouped["average_pit_stop"] * 100
+    )
+
+    numeric_columns = [
+        "average_pit_stop",
+        "pit_stop_std",
+        "fastest_pit_stop",
+        "slowest_pit_stop",
+        "duration_range",
+        "consistency_cv_percent",
+    ]
+    grouped[numeric_columns] = grouped[numeric_columns].round(3)
+
+    return grouped.sort_values(
+        ["consistency_cv_percent", "average_pit_stop"],
+        ascending=[True, True],
+    ).reset_index(drop=True)

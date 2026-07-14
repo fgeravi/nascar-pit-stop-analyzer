@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .analysis import (
     detect_outliers,
+    driver_consistency,
     driver_summary,
     load_data,
     overall_summary,
@@ -36,6 +37,13 @@ def build_parser() -> argparse.ArgumentParser:
     drivers.add_argument("--top", type=int, default=15)
 
     subparsers.add_parser("types", help="Compare pit-stop types.")
+
+    consistency = subparsers.add_parser(
+        "consistency",
+        help="Rank drivers by pit-stop consistency.",
+    )
+    consistency.add_argument("--min-stops", type=int, default=2)
+    consistency.add_argument("--top", type=int, default=15)
 
     outliers = subparsers.add_parser("outliers", help="List unusually long stops.")
     outliers.add_argument("--multiplier", type=float, default=1.5)
@@ -69,6 +77,14 @@ def main() -> None:
         print(stop_type_summary(frame).to_string(index=False))
         return
 
+    if args.command == "consistency":
+        result = driver_consistency(
+            frame,
+            minimum_stops=args.min_stops,
+        ).head(args.top)
+        print(result.to_string(index=False))
+        return
+
     if args.command == "outliers":
         result = detect_outliers(frame, multiplier=args.multiplier).head(args.top)
         print(result.to_string(index=False))
@@ -80,11 +96,13 @@ def main() -> None:
     drivers_path = output_dir / "driver_summary.csv"
     types_path = output_dir / "stop_type_summary.csv"
     outliers_path = output_dir / "pit_stop_outliers.csv"
+    consistency_path = output_dir / "driver_consistency.csv"
     summary_path = output_dir / "summary.json"
 
     driver_summary(frame).to_csv(drivers_path, index=False)
     stop_type_summary(frame).to_csv(types_path, index=False)
     detect_outliers(frame).to_csv(outliers_path, index=False)
+    driver_consistency(frame).to_csv(consistency_path, index=False)
     summary_path.write_text(
         json.dumps(overall_summary(frame), indent=2), encoding="utf-8"
     )
@@ -95,6 +113,7 @@ def main() -> None:
     print(f"Created {drivers_path}")
     print(f"Created {types_path}")
     print(f"Created {outliers_path}")
+    print(f"Created {consistency_path}")
     print(f"Created {summary_path}")
     for path in chart_paths:
         print(f"Created {path}")

@@ -1,6 +1,11 @@
 import pandas as pd
 
-from pitstop_analyzer.analysis import detect_outliers, driver_summary, overall_summary
+from pitstop_analyzer.analysis import (
+    detect_outliers,
+    driver_consistency,
+    driver_summary,
+    overall_summary,
+)
 
 
 def sample_frame() -> pd.DataFrame:
@@ -59,3 +64,15 @@ def test_driver_summary_aggregates_stops() -> None:
 def test_outlier_detector_returns_long_stop() -> None:
     result = detect_outliers(sample_frame(), multiplier=0.5)
     assert "Driver B" in result["driver_name"].tolist()
+
+
+
+def test_driver_consistency_calculates_variation() -> None:
+    result = driver_consistency(sample_frame(), minimum_stops=2)
+
+    driver_a = result.loc[result["driver_name"] == "Driver A"].iloc[0]
+
+    assert driver_a["stops"] == 2
+    assert driver_a["pit_stop_std"] == 1.0
+    assert driver_a["duration_range"] == 2.0
+    assert driver_a["consistency_cv_percent"] == 9.091
